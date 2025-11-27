@@ -41,9 +41,8 @@ export class InputManager {
     this.touchControls = new TouchControls()
     this.isMobile = this.touchControls.isMobile
 
-    if (!this.isMobile) {
-      this.setupEventListeners()
-    }
+    // Always setup keyboard/mouse events
+    this.setupEventListeners()
   }
 
   private setupEventListeners(): void {
