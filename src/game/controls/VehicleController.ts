@@ -28,6 +28,10 @@ export class VehicleController {
   private targetCameraPos = new THREE.Vector3()
   private lookTarget = new THREE.Vector3()
 
+  // Smoothed vehicle position (reduces jitter from physics)
+  private smoothedVehiclePos = new THREE.Vector3()
+  private isFirstUpdate = true
+
   constructor(vehicle: Vehicle, camera: THREE.PerspectiveCamera, input: InputManager) {
     this.vehicle = vehicle
     this.camera = camera
@@ -53,8 +57,9 @@ export class VehicleController {
 
     // Braking/Reverse
     if (state.backward) {
-      const speed = this.vehicle.physics.getSpeed()
-      if (speed > 5) {
+      const forwardSpeed = this.vehicle.physics.getForwardSpeed()
+      // If moving forward fast, brake. Otherwise reverse.
+      if (forwardSpeed > 5) {
         this.vehicle.physics.brake()
       } else {
         this.vehicle.physics.reverse()
@@ -127,28 +132,39 @@ export class VehicleController {
     const vehiclePos = this.vehicle.getPosition()
     const speed = this.vehicle.getSpeed()
 
-    // Calculate camera position
+    // Smooth the vehicle position to reduce physics jitter
+    if (this.isFirstUpdate) {
+      this.smoothedVehiclePos.copy(vehiclePos)
+      this.isFirstUpdate = false
+    } else {
+      // Heavily smooth position - higher value = more responsive but more jitter
+      // Lower value = smoother but more lag
+      const positionSmoothing = 0.15
+      this.smoothedVehiclePos.lerp(vehiclePos, positionSmoothing)
+    }
+
+    // Calculate camera position using smoothed vehicle position
     const horizontalDistance = this.cameraDistance * Math.cos(this.pitch)
     const verticalDistance = this.cameraDistance * Math.sin(this.pitch)
 
     this.targetCameraPos.set(
-      vehiclePos.x + horizontalDistance * Math.sin(this.yaw),
-      vehiclePos.y + this.cameraHeight + verticalDistance,
-      vehiclePos.z + horizontalDistance * Math.cos(this.yaw)
+      this.smoothedVehiclePos.x + horizontalDistance * Math.sin(this.yaw),
+      this.smoothedVehiclePos.y + this.cameraHeight + verticalDistance,
+      this.smoothedVehiclePos.z + horizontalDistance * Math.cos(this.yaw)
     )
 
     // Speed-based lerp: faster movement = faster camera follow
-    const baseLerp = 0.1
-    const speedLerp = Math.min(0.3, baseLerp + speed * 0.002)
+    const baseLerp = 0.08
+    const speedLerp = Math.min(0.2, baseLerp + speed * 0.001)
 
     // Smoothly interpolate camera position
     this.camera.position.lerp(this.targetCameraPos, speedLerp)
 
-    // Camera looks at vehicle
+    // Camera looks at smoothed vehicle position
     this.lookTarget.set(
-      vehiclePos.x,
-      vehiclePos.y + this.cameraLookHeight,
-      vehiclePos.z
+      this.smoothedVehiclePos.x,
+      this.smoothedVehiclePos.y + this.cameraLookHeight,
+      this.smoothedVehiclePos.z
     )
     this.camera.lookAt(this.lookTarget)
   }

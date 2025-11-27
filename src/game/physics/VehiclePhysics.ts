@@ -27,8 +27,8 @@ export const DEFAULT_VEHICLE_CONFIG: VehicleConfig = {
   chassisMass: 800,
   wheelRadius: 0.4,
   wheelWidth: 0.3,
-  suspensionStiffness: 20,
-  suspensionDamping: 2.3,
+  suspensionStiffness: 30,        // Increased for less bouncing
+  suspensionDamping: 4.0,         // Increased for faster settling
   suspensionCompression: 4.4,
   suspensionRestLength: 0.3,
   frictionSlip: 5,
@@ -219,6 +219,21 @@ export class VehiclePhysics {
   getSpeed(): number {
     const velocity = this.chassisBody.velocity
     return Math.sqrt(velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2) * 3.6 // m/s to km/h
+  }
+
+  // Returns positive if moving forward, negative if moving backward
+  getForwardSpeed(): number {
+    const velocity = this.chassisBody.velocity
+    const forward = new THREE.Vector3(0, 0, 1)
+    forward.applyQuaternion(new THREE.Quaternion(
+      this.chassisBody.quaternion.x,
+      this.chassisBody.quaternion.y,
+      this.chassisBody.quaternion.z,
+      this.chassisBody.quaternion.w
+    ))
+    // Dot product of velocity and forward direction
+    const forwardSpeed = velocity.x * forward.x + velocity.y * forward.y + velocity.z * forward.z
+    return forwardSpeed * 3.6 // m/s to km/h
   }
 
   getSpeedKmh(): number {

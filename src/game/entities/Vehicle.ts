@@ -17,6 +17,10 @@ export class Vehicle {
   private taillightRight: THREE.PointLight
   public lightsOn = true
 
+  // Reusable objects for update (avoid GC)
+  private tempWheelPos = new THREE.Vector3()
+  private tempWheelQuat = new THREE.Quaternion()
+
   constructor(physicsWorld: PhysicsWorld, config: Partial<VehicleConfig> = {}, color: number = 0xff3333) {
     this.config = { ...DEFAULT_VEHICLE_CONFIG, ...config }
     this.physics = new VehiclePhysics(physicsWorld, this.config)
@@ -203,27 +207,30 @@ export class Vehicle {
   update(): void {
     this.physics.update()
 
-    // Update chassis position and rotation
+    // Update chassis position and rotation with smoothing to reduce jitter
     const position = this.physics.getPosition()
     const rotation = this.physics.getRotation()
 
-    this.mesh.position.copy(position)
-    this.mesh.quaternion.copy(rotation)
+    // Smooth interpolation for chassis
+    this.mesh.position.lerp(position, 0.3)
+    this.mesh.quaternion.slerp(rotation, 0.3)
 
-    // Update wheel positions
+    // Update wheel positions with smoothing (reuse temp objects)
     for (let i = 0; i < 4; i++) {
       const wheelBody = this.physics.wheelBodies[i]
-      this.wheelMeshes[i].position.set(
+      this.tempWheelPos.set(
         wheelBody.position.x,
         wheelBody.position.y,
         wheelBody.position.z
       )
-      this.wheelMeshes[i].quaternion.set(
+      this.tempWheelQuat.set(
         wheelBody.quaternion.x,
         wheelBody.quaternion.y,
         wheelBody.quaternion.z,
         wheelBody.quaternion.w
       )
+      this.wheelMeshes[i].position.lerp(this.tempWheelPos, 0.3)
+      this.wheelMeshes[i].quaternion.slerp(this.tempWheelQuat, 0.3)
     }
   }
 
