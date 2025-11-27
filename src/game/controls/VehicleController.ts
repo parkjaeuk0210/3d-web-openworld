@@ -24,6 +24,10 @@ export class VehicleController {
   private isAutoFollow = true
   private manualControlTimer: number | null = null
 
+  // Reusable vectors to avoid GC
+  private targetCameraPos = new THREE.Vector3()
+  private lookTarget = new THREE.Vector3()
+
   constructor(vehicle: Vehicle, camera: THREE.PerspectiveCamera, input: InputManager) {
     this.vehicle = vehicle
     this.camera = camera
@@ -114,28 +118,32 @@ export class VehicleController {
 
   private updateCameraPosition(): void {
     const vehiclePos = this.vehicle.getPosition()
+    const speed = this.vehicle.getSpeed()
 
     // Calculate camera position
     const horizontalDistance = this.cameraDistance * Math.cos(this.pitch)
     const verticalDistance = this.cameraDistance * Math.sin(this.pitch)
 
-    const cameraX = vehiclePos.x + horizontalDistance * Math.sin(this.yaw)
-    const cameraY = vehiclePos.y + this.cameraHeight + verticalDistance
-    const cameraZ = vehiclePos.z + horizontalDistance * Math.cos(this.yaw)
-
-    // Smoothly interpolate camera position
-    this.camera.position.lerp(
-      new THREE.Vector3(cameraX, cameraY, cameraZ),
-      0.08
+    this.targetCameraPos.set(
+      vehiclePos.x + horizontalDistance * Math.sin(this.yaw),
+      vehiclePos.y + this.cameraHeight + verticalDistance,
+      vehiclePos.z + horizontalDistance * Math.cos(this.yaw)
     )
 
+    // Speed-based lerp: faster movement = faster camera follow
+    const baseLerp = 0.1
+    const speedLerp = Math.min(0.3, baseLerp + speed * 0.002)
+
+    // Smoothly interpolate camera position
+    this.camera.position.lerp(this.targetCameraPos, speedLerp)
+
     // Camera looks at vehicle
-    const lookTarget = new THREE.Vector3(
+    this.lookTarget.set(
       vehiclePos.x,
       vehiclePos.y + this.cameraLookHeight,
       vehiclePos.z
     )
-    this.camera.lookAt(lookTarget)
+    this.camera.lookAt(this.lookTarget)
   }
 
   getYaw(): number {
