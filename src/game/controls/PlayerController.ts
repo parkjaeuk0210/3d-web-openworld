@@ -19,8 +19,19 @@ export class PlayerController {
   private minPitch = -0.5
   private maxPitch = 1.2
 
+  // Auto-follow camera
+  private autoFollowSpeed = 0.06
+  private manualControlActive = false
+  private manualControlTimer: number | null = null
+  private lastMovementYaw = 0
+
   // Movement direction
   private moveDirection = new THREE.Vector3()
+
+  // Reusable vectors to avoid GC
+  private targetCameraPos = new THREE.Vector3()
+  private lookTarget = new THREE.Vector3()
+  private rotatedDirection = new THREE.Vector3()
 
   constructor(player: Player, camera: THREE.PerspectiveCamera, input: InputManager) {
     this.player = player
@@ -39,10 +50,22 @@ export class PlayerController {
 
   private handleCameraRotation(): void {
     const state = this.input.getState()
-    if (!this.input.getPointerLocked()) return
 
-    this.yaw += state.mouseDeltaX * this.cameraSensitivity
-    this.pitch += state.mouseDeltaY * this.cameraSensitivity
+    // Manual camera control (works with or without pointer lock)
+    if (Math.abs(state.mouseDeltaX) > 0 || Math.abs(state.mouseDeltaY) > 0) {
+      // Inverted for natural trackpad/mouse feel (same as vehicle)
+      this.yaw -= state.mouseDeltaX * this.cameraSensitivity
+      this.pitch -= state.mouseDeltaY * this.cameraSensitivity
+      this.manualControlActive = true
+
+      // Reset manual control flag after short delay
+      if (this.manualControlTimer) {
+        clearTimeout(this.manualControlTimer)
+      }
+      this.manualControlTimer = window.setTimeout(() => {
+        this.manualControlActive = false
+      }, 800)
+    }
 
     // Clamp pitch
     this.pitch = Math.max(this.minPitch, Math.min(this.maxPitch, this.pitch))
@@ -63,17 +86,32 @@ export class PlayerController {
       this.moveDirection.normalize()
 
       // Rotate movement direction based on camera yaw
-      const rotatedDirection = new THREE.Vector3(
+      this.rotatedDirection.set(
         this.moveDirection.x * Math.cos(this.yaw) - this.moveDirection.z * Math.sin(this.yaw),
         0,
         this.moveDirection.x * Math.sin(this.yaw) + this.moveDirection.z * Math.cos(this.yaw)
       )
 
-      this.player.physics.move(rotatedDirection, state.sprint)
+      this.player.physics.move(this.rotatedDirection, state.sprint)
 
       // Rotate player mesh to face movement direction
-      const targetRotation = Math.atan2(rotatedDirection.x, rotatedDirection.z)
+      const targetRotation = Math.atan2(this.rotatedDirection.x, this.rotatedDirection.z)
       this.player.setRotation(targetRotation)
+
+      // Store movement direction for auto-follow
+      this.lastMovementYaw = targetRotation + Math.PI
+
+      // GTA-style auto-follow: gentle, only when not manually controlling
+      if (!this.manualControlActive) {
+        let deltaYaw = this.lastMovementYaw - this.yaw
+
+        // Normalize delta to -PI to PI range
+        while (deltaYaw > Math.PI) deltaYaw -= Math.PI * 2
+        while (deltaYaw < -Math.PI) deltaYaw += Math.PI * 2
+
+        // Very gentle follow (GTA style)
+        this.yaw += deltaYaw * 0.02
+      }
     } else {
       this.player.physics.stop()
     }
@@ -93,23 +131,22 @@ export class PlayerController {
     const horizontalDistance = this.cameraDistance * Math.cos(this.pitch)
     const verticalDistance = this.cameraDistance * Math.sin(this.pitch)
 
-    const cameraX = playerPos.x + horizontalDistance * Math.sin(this.yaw)
-    const cameraY = playerPos.y + this.cameraHeight + verticalDistance
-    const cameraZ = playerPos.z + horizontalDistance * Math.cos(this.yaw)
-
-    // Smoothly interpolate camera position
-    this.camera.position.lerp(
-      new THREE.Vector3(cameraX, cameraY, cameraZ),
-      0.1
+    this.targetCameraPos.set(
+      playerPos.x + horizontalDistance * Math.sin(this.yaw),
+      playerPos.y + this.cameraHeight + verticalDistance,
+      playerPos.z + horizontalDistance * Math.cos(this.yaw)
     )
 
+    // Smoothly interpolate camera position
+    this.camera.position.lerp(this.targetCameraPos, 0.1)
+
     // Camera looks at player
-    const lookTarget = new THREE.Vector3(
+    this.lookTarget.set(
       playerPos.x,
       playerPos.y + this.cameraLookHeight,
       playerPos.z
     )
-    this.camera.lookAt(lookTarget)
+    this.camera.lookAt(this.lookTarget)
   }
 
   getYaw(): number {

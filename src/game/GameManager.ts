@@ -330,9 +330,8 @@ export class GameManager {
       this.inputManager
     )
 
-    // Transfer camera yaw to vehicle controller
-    const vehicleRotation = new THREE.Euler().setFromQuaternion(vehicle.mesh.quaternion)
-    this.vehicleController.setYaw(vehicleRotation.y + Math.PI)
+    // Align camera to vehicle direction immediately
+    this.vehicleController.alignToVehicle()
 
     // Hide vehicle indicator
     const indicator = document.getElementById('vehicle-indicator')

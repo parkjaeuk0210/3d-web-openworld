@@ -19,9 +19,9 @@ export class VehicleController {
   private minPitch = -0.2
   private maxPitch = 0.8
 
-  // Auto-follow camera
-  private autoFollowSpeed = 0.15
-  private isAutoFollow = true
+  // Auto-follow camera - always on, manual input temporarily slows it
+  private autoFollowSpeed = 0.08
+  private manualControlActive = false
   private manualControlTimer: number | null = null
 
   // Reusable vectors to avoid GC
@@ -78,20 +78,21 @@ export class VehicleController {
 
   private handleCameraRotation(): void {
     const state = this.input.getState()
+    const speed = this.vehicle.getSpeed()
 
-    // Manual camera control with mouse/touch (inverted for natural trackpad feel)
+    // Manual camera control with mouse/touch
     if (Math.abs(state.mouseDeltaX) > 0 || Math.abs(state.mouseDeltaY) > 0) {
       this.yaw -= state.mouseDeltaX * this.cameraSensitivity
       this.pitch -= state.mouseDeltaY * this.cameraSensitivity
-      this.isAutoFollow = false
+      this.manualControlActive = true
 
-      // Reset auto-follow after a delay
+      // Reset manual control flag after delay (longer = more manual control time)
       if (this.manualControlTimer) {
         clearTimeout(this.manualControlTimer)
       }
       this.manualControlTimer = window.setTimeout(() => {
-        this.isAutoFollow = true
-      }, 1500)
+        this.manualControlActive = false
+      }, 2000)
     }
 
     // Clamp pitch
@@ -99,20 +100,26 @@ export class VehicleController {
 
     this.input.resetMouseDelta()
 
-    // Auto-follow: gradually return camera behind vehicle
-    if (this.isAutoFollow) {
-      const vehicleRotation = new THREE.Euler().setFromQuaternion(this.vehicle.mesh.quaternion)
-      const targetYaw = vehicleRotation.y + Math.PI
+    // Keep yaw normalized to prevent overflow
+    while (this.yaw > Math.PI) this.yaw -= Math.PI * 2
+    while (this.yaw < -Math.PI) this.yaw += Math.PI * 2
 
-      // Smoothly interpolate yaw towards target
+    // GTA-style auto-follow: only when NOT manually controlling AND moving
+    if (!this.manualControlActive && speed > 5) {
+      // Use actual forward direction vector instead of Euler angles
+      const forward = this.vehicle.getForwardDirection()
+      let targetYaw = Math.atan2(-forward.x, -forward.z) // Camera behind vehicle
+
+      // Calculate yaw difference (shortest path)
       let deltaYaw = targetYaw - this.yaw
 
-      // Normalize delta to -PI to PI range
-      while (deltaYaw > Math.PI) deltaYaw -= Math.PI * 2
-      while (deltaYaw < -Math.PI) deltaYaw += Math.PI * 2
+      // Normalize delta to -PI to PI range (always take shortest rotation)
+      if (deltaYaw > Math.PI) deltaYaw -= Math.PI * 2
+      if (deltaYaw < -Math.PI) deltaYaw += Math.PI * 2
 
-      // Smooth follow
-      this.yaw += deltaYaw * this.autoFollowSpeed
+      // Gentle follow - GTA style (very gradual)
+      const followSpeed = 0.02 + Math.min(0.03, speed * 0.0005)
+      this.yaw += deltaYaw * followSpeed
     }
   }
 
@@ -152,6 +159,11 @@ export class VehicleController {
 
   setYaw(yaw: number): void {
     this.yaw = yaw
-    this.isAutoFollow = true
+  }
+
+  // Initialize camera to face vehicle direction immediately
+  alignToVehicle(): void {
+    const forward = this.vehicle.getForwardDirection()
+    this.yaw = Math.atan2(-forward.x, -forward.z)
   }
 }
