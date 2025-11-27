@@ -75,10 +75,10 @@ export class VehicleController {
   private handleCameraRotation(): void {
     const state = this.input.getState()
 
-    // Manual camera control with mouse/touch
+    // Manual camera control with mouse/touch (inverted for natural trackpad feel)
     if (Math.abs(state.mouseDeltaX) > 0 || Math.abs(state.mouseDeltaY) > 0) {
-      this.yaw += state.mouseDeltaX * this.cameraSensitivity
-      this.pitch += state.mouseDeltaY * this.cameraSensitivity
+      this.yaw -= state.mouseDeltaX * this.cameraSensitivity
+      this.pitch -= state.mouseDeltaY * this.cameraSensitivity
       this.isAutoFollow = false
 
       // Reset auto-follow after a delay
@@ -107,11 +107,8 @@ export class VehicleController {
       while (deltaYaw > Math.PI) deltaYaw -= Math.PI * 2
       while (deltaYaw < -Math.PI) deltaYaw += Math.PI * 2
 
-      // Faster follow when moving
-      const speed = this.vehicle.getSpeed()
-      const followSpeed = speed > 10 ? this.autoFollowSpeed * 1.5 : this.autoFollowSpeed
-
-      this.yaw += deltaYaw * followSpeed
+      // Smooth follow
+      this.yaw += deltaYaw * this.autoFollowSpeed
     }
   }
 

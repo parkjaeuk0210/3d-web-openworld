@@ -3,6 +3,7 @@ import { PhysicsWorld } from './physics/PhysicsWorld'
 import { Player } from './entities/Player'
 import { Vehicle } from './entities/Vehicle'
 import { City } from './entities/Building'
+import { DestructibleStructure } from './entities/DestructibleStructure'
 import { InputManager } from './controls/InputManager'
 import { PlayerController } from './controls/PlayerController'
 import { VehicleController } from './controls/VehicleController'
@@ -26,6 +27,7 @@ export class GameManager {
   private player: Player
   private vehicles: Vehicle[] = []
   private city: City
+  private destructibleStructure: DestructibleStructure
 
   // Controls
   private inputManager: InputManager
@@ -62,6 +64,9 @@ export class GameManager {
 
     this.updateLoadingProgress(50, 'Creating city...')
     this.createCity()
+
+    this.updateLoadingProgress(60, 'Creating destructible structures...')
+    this.createDestructibleStructures()
 
     this.updateLoadingProgress(70, 'Spawning vehicles...')
     this.createVehicles()
@@ -173,6 +178,15 @@ export class GameManager {
     this.city.addToScene(this.scene)
   }
 
+  private createDestructibleStructures(): void {
+    // Create a destructible structure in the center of the map
+    this.destructibleStructure = new DestructibleStructure(
+      this.physicsWorld,
+      new THREE.Vector3(0, 0, -40) // Position it in the center-north area
+    )
+    this.destructibleStructure.addToScene(this.scene)
+  }
+
   private createVehicles(): void {
     // Create multiple vehicles around the city
     const vehicleConfigs = [
@@ -225,6 +239,7 @@ export class GameManager {
     for (const vehicle of this.vehicles) {
       vehicle.update()
     }
+    this.destructibleStructure.update()
 
     // Handle interactions
     this.handleInteraction()

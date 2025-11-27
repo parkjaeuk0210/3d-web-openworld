@@ -27,15 +27,15 @@ export const DEFAULT_VEHICLE_CONFIG: VehicleConfig = {
   chassisMass: 800,
   wheelRadius: 0.4,
   wheelWidth: 0.3,
-  suspensionStiffness: 30,
-  suspensionDamping: 4.4,
+  suspensionStiffness: 20,
+  suspensionDamping: 2.3,
   suspensionCompression: 4.4,
   suspensionRestLength: 0.3,
-  frictionSlip: 5,
-  rollInfluence: 0.01,
-  maxEngineForce: 2000,
-  maxBrakingForce: 100,
-  maxSteeringAngle: Math.PI / 6
+  frictionSlip: 1000,
+  rollInfluence: 0.2,
+  maxEngineForce: 1500,
+  maxBrakingForce: 500,
+  maxSteeringAngle: 0.5
 }
 
 export class VehiclePhysics {
@@ -74,11 +74,12 @@ export class VehiclePhysics {
 
     this.chassisBody = new CANNON.Body({
       mass: this.config.chassisMass,
-      material: this.physicsWorld.createVehicleMaterial()
+      material: this.physicsWorld.createVehicleMaterial(),
+      linearDamping: 0.01,
+      angularDamping: 0.01
     })
     this.chassisBody.addShape(chassisShape)
     this.chassisBody.position.set(0, 2, 0)
-    this.chassisBody.angularDamping = 0.4
 
     // Create raycast vehicle
     this.vehicle = new CANNON.RaycastVehicle({
@@ -88,7 +89,7 @@ export class VehiclePhysics {
       indexForwardAxis: 2
     })
 
-    // Wheel options
+    // Wheel options (matching Orillusion/Ammo.js settings)
     const wheelOptions = {
       radius: this.config.wheelRadius,
       directionLocal: new CANNON.Vec3(0, -1, 0),
@@ -101,9 +102,9 @@ export class VehiclePhysics {
       rollInfluence: this.config.rollInfluence,
       axleLocal: new CANNON.Vec3(-1, 0, 0),
       chassisConnectionPointLocal: new CANNON.Vec3(),
-      maxSuspensionTravel: 0.3,
-      customSlidingRotationalSpeed: -30,
-      useCustomSlidingRotationalSpeed: true
+      maxSuspensionTravel: 0.6,
+      customSlidingRotationalSpeed: 0,
+      useCustomSlidingRotationalSpeed: false
     }
 
     // Calculate wheel positions
@@ -228,6 +229,14 @@ export class VehiclePhysics {
       this.chassisBody.position.x,
       this.chassisBody.position.y,
       this.chassisBody.position.z
+    )
+  }
+
+  getVelocity(): THREE.Vector3 {
+    return new THREE.Vector3(
+      this.chassisBody.velocity.x,
+      this.chassisBody.velocity.y,
+      this.chassisBody.velocity.z
     )
   }
 
