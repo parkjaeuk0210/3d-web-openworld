@@ -10,6 +10,13 @@ export class Vehicle {
   private chassisMesh: THREE.Mesh
   private config: VehicleConfig
 
+  // Lights
+  private headlightLeft: THREE.SpotLight
+  private headlightRight: THREE.SpotLight
+  private taillightLeft: THREE.PointLight
+  private taillightRight: THREE.PointLight
+  public lightsOn = true
+
   constructor(physicsWorld: PhysicsWorld, config: Partial<VehicleConfig> = {}, color: number = 0xff3333) {
     this.config = { ...DEFAULT_VEHICLE_CONFIG, ...config }
     this.physics = new VehiclePhysics(physicsWorld, this.config)
@@ -110,8 +117,44 @@ export class Vehicle {
     rightTaillight.rotation.y = Math.PI
     this.mesh.add(rightTaillight)
 
+    // Create actual lights
+    this.createLights()
+
     // Create wheels
     this.createWheels()
+  }
+
+  private createLights(): void {
+    const frontZ = this.config.chassisLength / 2
+    const rearZ = -this.config.chassisLength / 2
+
+    // Headlights - SpotLights pointing forward
+    this.headlightLeft = new THREE.SpotLight(0xffffee, 3, 40, Math.PI / 6, 0.3, 1)
+    this.headlightLeft.position.set(-0.5, 0.1, frontZ)
+    this.mesh.add(this.headlightLeft)
+
+    const targetLeft = new THREE.Object3D()
+    targetLeft.position.set(-0.5, -0.5, frontZ + 15)
+    this.mesh.add(targetLeft)
+    this.headlightLeft.target = targetLeft
+
+    this.headlightRight = new THREE.SpotLight(0xffffee, 3, 40, Math.PI / 6, 0.3, 1)
+    this.headlightRight.position.set(0.5, 0.1, frontZ)
+    this.mesh.add(this.headlightRight)
+
+    const targetRight = new THREE.Object3D()
+    targetRight.position.set(0.5, -0.5, frontZ + 15)
+    this.mesh.add(targetRight)
+    this.headlightRight.target = targetRight
+
+    // Taillights - PointLights for red glow
+    this.taillightLeft = new THREE.PointLight(0xff0000, 1, 8, 2)
+    this.taillightLeft.position.set(-0.5, 0.1, rearZ - 0.1)
+    this.mesh.add(this.taillightLeft)
+
+    this.taillightRight = new THREE.PointLight(0xff0000, 1, 8, 2)
+    this.taillightRight.position.set(0.5, 0.1, rearZ - 0.1)
+    this.mesh.add(this.taillightRight)
   }
 
   private createWheels(): void {
@@ -212,5 +255,21 @@ export class Vehicle {
 
   reset(): void {
     this.physics.reset()
+  }
+
+  toggleLights(): void {
+    this.lightsOn = !this.lightsOn
+    this.headlightLeft.visible = this.lightsOn
+    this.headlightRight.visible = this.lightsOn
+    this.taillightLeft.visible = this.lightsOn
+    this.taillightRight.visible = this.lightsOn
+  }
+
+  setLights(on: boolean): void {
+    this.lightsOn = on
+    this.headlightLeft.visible = on
+    this.headlightRight.visible = on
+    this.taillightLeft.visible = on
+    this.taillightRight.visible = on
   }
 }
