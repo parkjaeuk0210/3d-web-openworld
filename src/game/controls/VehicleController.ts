@@ -79,8 +79,9 @@ export class VehicleController {
   private handleCameraRotation(): void {
     const state = this.input.getState()
 
-    // Manual camera control with mouse/touch (inverted for natural trackpad feel)
+    // Manual camera control with mouse/touch
     if (Math.abs(state.mouseDeltaX) > 0 || Math.abs(state.mouseDeltaY) > 0) {
+      // Mouse right = look right, mouse up = look up
       this.yaw -= state.mouseDeltaX * this.cameraSensitivity
       this.pitch -= state.mouseDeltaY * this.cameraSensitivity
       this.isAutoFollow = false
