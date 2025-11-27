@@ -3,16 +3,16 @@ import * as CANNON from 'cannon-es'
 export class PhysicsWorld {
   public world: CANNON.World
   private fixedTimeStep = 1 / 60
-  private maxSubSteps = 3
+  private maxSubSteps = 10
 
   constructor() {
     this.world = new CANNON.World()
     this.world.gravity.set(0, -9.82, 0)
     this.world.broadphase = new CANNON.SAPBroadphase(this.world)
-    this.world.allowSleep = true
+    this.world.allowSleep = false // Disable sleep for vehicles
 
     // Set solver iterations for stability
-    ;(this.world.solver as CANNON.GSSolver).iterations = 10
+    ;(this.world.solver as CANNON.GSSolver).iterations = 20
 
     // Default contact material
     const defaultMaterial = new CANNON.Material('default')

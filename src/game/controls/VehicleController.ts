@@ -20,7 +20,7 @@ export class VehicleController {
   private maxPitch = 0.8
 
   // Auto-follow camera
-  private autoFollowSpeed = 0.08
+  private autoFollowSpeed = 0.15
   private isAutoFollow = true
   private manualControlTimer: number | null = null
 

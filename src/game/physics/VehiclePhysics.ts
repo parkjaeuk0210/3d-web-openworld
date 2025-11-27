@@ -31,8 +31,8 @@ export const DEFAULT_VEHICLE_CONFIG: VehicleConfig = {
   suspensionDamping: 2.3,
   suspensionCompression: 4.4,
   suspensionRestLength: 0.3,
-  frictionSlip: 1000,
-  rollInfluence: 0.2,
+  frictionSlip: 5,
+  rollInfluence: 0.1,
   maxEngineForce: 1500,
   maxBrakingForce: 500,
   maxSteeringAngle: 0.5
@@ -76,7 +76,8 @@ export class VehiclePhysics {
       mass: this.config.chassisMass,
       material: this.physicsWorld.createVehicleMaterial(),
       linearDamping: 0.01,
-      angularDamping: 0.01
+      angularDamping: 0.1,
+      allowSleep: false
     })
     this.chassisBody.addShape(chassisShape)
     this.chassisBody.position.set(0, 2, 0)
