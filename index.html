@@ -15,6 +15,10 @@
       overflow: hidden;
       background: #000;
       font-family: 'Arial', sans-serif;
+      touch-action: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     #game-container {
@@ -197,6 +201,47 @@
     #loading-text {
       color: #888;
       margin-top: 15px;
+    }
+
+    /* Mobile styles */
+    @media (max-width: 1024px), (pointer: coarse) {
+      #controls-hint {
+        display: none;
+      }
+
+      #minimap {
+        width: 120px;
+        height: 120px;
+        bottom: 200px;
+        left: 10px;
+      }
+
+      #speedometer {
+        width: 80px;
+        height: 80px;
+        bottom: 200px;
+        right: 10px;
+      }
+
+      #speed-value {
+        font-size: 20px;
+      }
+
+      #speed-unit {
+        font-size: 10px;
+      }
+
+      #health-bar-container {
+        top: 10px;
+        left: 10px;
+        width: 150px;
+      }
+
+      #vehicle-indicator {
+        bottom: 280px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
     }
   </style>
 </head>

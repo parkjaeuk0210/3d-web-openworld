@@ -38,10 +38,11 @@ export class PlayerController {
   }
 
   private handleCameraRotation(): void {
+    const state = this.input.getState()
     if (!this.input.getPointerLocked()) return
 
-    this.yaw += this.input.state.mouseDeltaX * this.cameraSensitivity
-    this.pitch += this.input.state.mouseDeltaY * this.cameraSensitivity
+    this.yaw += state.mouseDeltaX * this.cameraSensitivity
+    this.pitch += state.mouseDeltaY * this.cameraSensitivity
 
     // Clamp pitch
     this.pitch = Math.max(this.minPitch, Math.min(this.maxPitch, this.pitch))
@@ -50,12 +51,13 @@ export class PlayerController {
   }
 
   private handleMovement(): void {
+    const state = this.input.getState()
     this.moveDirection.set(0, 0, 0)
 
-    if (this.input.state.forward) this.moveDirection.z -= 1
-    if (this.input.state.backward) this.moveDirection.z += 1
-    if (this.input.state.left) this.moveDirection.x -= 1
-    if (this.input.state.right) this.moveDirection.x += 1
+    if (state.forward) this.moveDirection.z -= 1
+    if (state.backward) this.moveDirection.z += 1
+    if (state.left) this.moveDirection.x -= 1
+    if (state.right) this.moveDirection.x += 1
 
     if (this.moveDirection.lengthSq() > 0) {
       this.moveDirection.normalize()
@@ -67,7 +69,7 @@ export class PlayerController {
         this.moveDirection.x * Math.sin(this.yaw) + this.moveDirection.z * Math.cos(this.yaw)
       )
 
-      this.player.physics.move(rotatedDirection, this.input.state.sprint)
+      this.player.physics.move(rotatedDirection, state.sprint)
 
       // Rotate player mesh to face movement direction
       const targetRotation = Math.atan2(rotatedDirection.x, rotatedDirection.z)
@@ -78,7 +80,8 @@ export class PlayerController {
   }
 
   private handleJump(): void {
-    if (this.input.state.jump) {
+    const state = this.input.getState()
+    if (state.jump) {
       this.player.physics.jump()
     }
   }

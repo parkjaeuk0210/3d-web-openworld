@@ -247,7 +247,8 @@ export class GameManager {
   private handleInteraction(): void {
     if (!this.canInteract) return
 
-    if (this.inputManager.state.interact) {
+    const state = this.inputManager.getState()
+    if (state.interact) {
       this.canInteract = false
 
       if (this.gameMode === GameMode.OnFoot) {

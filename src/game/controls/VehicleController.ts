@@ -36,16 +36,18 @@ export class VehicleController {
   }
 
   private handleInput(): void {
+    const state = this.input.getState()
+
     // Reset controls each frame
     this.vehicle.physics.resetControls()
 
     // Acceleration
-    if (this.input.state.forward) {
+    if (state.forward) {
       this.vehicle.physics.accelerate()
     }
 
     // Braking/Reverse
-    if (this.input.state.backward) {
+    if (state.backward) {
       const speed = this.vehicle.physics.getSpeed()
       if (speed > 5) {
         this.vehicle.physics.brake()
@@ -55,27 +57,28 @@ export class VehicleController {
     }
 
     // Steering
-    if (this.input.state.left) {
+    if (state.left) {
       this.vehicle.physics.steerLeft()
-    } else if (this.input.state.right) {
+    } else if (state.right) {
       this.vehicle.physics.steerRight()
     } else {
       this.vehicle.physics.resetSteering()
     }
 
     // Handbrake (sprint key)
-    if (this.input.state.sprint) {
+    if (state.sprint) {
       this.vehicle.physics.brake(200)
     }
   }
 
   private handleCameraRotation(): void {
+    const state = this.input.getState()
     if (!this.input.getPointerLocked()) return
 
     // Manual camera control with mouse
-    if (Math.abs(this.input.state.mouseDeltaX) > 0 || Math.abs(this.input.state.mouseDeltaY) > 0) {
-      this.yaw += this.input.state.mouseDeltaX * this.cameraSensitivity
-      this.pitch += this.input.state.mouseDeltaY * this.cameraSensitivity
+    if (Math.abs(state.mouseDeltaX) > 0 || Math.abs(state.mouseDeltaY) > 0) {
+      this.yaw += state.mouseDeltaX * this.cameraSensitivity
+      this.pitch += state.mouseDeltaY * this.cameraSensitivity
       this.isAutoFollow = false
 
       // Reset auto-follow after a delay (handled by gradual return)

@@ -1,3 +1,5 @@
+import { TouchControls } from './TouchControls'
+
 export interface InputState {
   forward: boolean
   backward: boolean
@@ -17,6 +19,7 @@ export class InputManager {
   private mousePosition = { x: 0, y: 0 }
   private mouseDelta = { x: 0, y: 0 }
   private isPointerLocked = false
+  private touchControls: TouchControls
 
   public state: InputState = {
     forward: false,
@@ -32,8 +35,15 @@ export class InputManager {
     mouseDeltaY: 0
   }
 
+  public isMobile = false
+
   constructor() {
-    this.setupEventListeners()
+    this.touchControls = new TouchControls()
+    this.isMobile = this.touchControls.isMobile
+
+    if (!this.isMobile) {
+      this.setupEventListeners()
+    }
   }
 
   private setupEventListeners(): void {
@@ -104,18 +114,33 @@ export class InputManager {
     this.state.interact = this.keys.has('KeyE')
   }
 
+  // Combined state getter - merges keyboard and touch input
+  getState(): InputState {
+    if (this.isMobile) {
+      return this.touchControls.state
+    }
+    return this.state
+  }
+
   isKeyPressed(code: string): boolean {
     return this.keys.has(code)
   }
 
   resetMouseDelta(): void {
-    this.mouseDelta.x = 0
-    this.mouseDelta.y = 0
-    this.state.mouseDeltaX = 0
-    this.state.mouseDeltaY = 0
+    if (this.isMobile) {
+      this.touchControls.resetMouseDelta()
+    } else {
+      this.mouseDelta.x = 0
+      this.mouseDelta.y = 0
+      this.state.mouseDeltaX = 0
+      this.state.mouseDeltaY = 0
+    }
   }
 
   getPointerLocked(): boolean {
+    if (this.isMobile) {
+      return this.touchControls.getPointerLocked()
+    }
     return this.isPointerLocked
   }
 }
