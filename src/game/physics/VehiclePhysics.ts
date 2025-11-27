@@ -27,12 +27,12 @@ export const DEFAULT_VEHICLE_CONFIG: VehicleConfig = {
   chassisMass: 800,
   wheelRadius: 0.4,
   wheelWidth: 0.3,
-  suspensionStiffness: 20,
-  suspensionDamping: 2.3,
+  suspensionStiffness: 30,
+  suspensionDamping: 2.8,
   suspensionCompression: 4.4,
   suspensionRestLength: 0.3,
   frictionSlip: 5,
-  rollInfluence: 0.1,
+  rollInfluence: 0.01,
   maxEngineForce: 1500,
   maxBrakingForce: 500,
   maxSteeringAngle: 0.5
@@ -76,10 +76,20 @@ export class VehiclePhysics {
       mass: this.config.chassisMass,
       material: this.physicsWorld.createVehicleMaterial(),
       linearDamping: 0.01,
-      angularDamping: 0.1,
+      angularDamping: 0.5,
       allowSleep: false
     })
-    this.chassisBody.addShape(chassisShape)
+
+    // Main chassis shape (slightly raised to lower center of mass)
+    this.chassisBody.addShape(chassisShape, new CANNON.Vec3(0, 0.2, 0))
+
+    // Add lower weight to lower center of mass and prevent flipping
+    const lowerWeight = new CANNON.Box(new CANNON.Vec3(
+      this.config.chassisWidth / 2 - 0.1,
+      0.15,
+      this.config.chassisLength / 2 - 0.2
+    ))
+    this.chassisBody.addShape(lowerWeight, new CANNON.Vec3(0, -0.3, 0))
     this.chassisBody.position.set(0, 2, 0)
 
     // Create raycast vehicle
@@ -201,11 +211,21 @@ export class VehiclePhysics {
     this.vehicle.applyEngineForce(this.engineForce, this.BACK_LEFT)
     this.vehicle.applyEngineForce(this.engineForce, this.BACK_RIGHT)
 
-    // Apply braking force
-    this.vehicle.setBrake(this.brakingForce, this.FRONT_LEFT)
-    this.vehicle.setBrake(this.brakingForce, this.FRONT_RIGHT)
-    this.vehicle.setBrake(this.brakingForce * 0.8, this.BACK_LEFT)
-    this.vehicle.setBrake(this.brakingForce * 0.8, this.BACK_RIGHT)
+    // Apply braking force (more balanced distribution to prevent nose-dive)
+    this.vehicle.setBrake(this.brakingForce * 0.6, this.FRONT_LEFT)
+    this.vehicle.setBrake(this.brakingForce * 0.6, this.FRONT_RIGHT)
+    this.vehicle.setBrake(this.brakingForce, this.BACK_LEFT)
+    this.vehicle.setBrake(this.brakingForce, this.BACK_RIGHT)
+
+    // Limit angular velocity to prevent flipping during hard braking
+    const angVel = this.chassisBody.angularVelocity
+    const maxAngularVelocity = 2.5
+    if (Math.abs(angVel.x) > maxAngularVelocity) {
+      angVel.x = Math.sign(angVel.x) * maxAngularVelocity
+    }
+    if (Math.abs(angVel.z) > maxAngularVelocity) {
+      angVel.z = Math.sign(angVel.z) * maxAngularVelocity
+    }
 
     // Update wheel body positions
     for (let i = 0; i < this.vehicle.wheelInfos.length; i++) {
