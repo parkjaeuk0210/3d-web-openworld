@@ -41,8 +41,9 @@ export class PlayerController {
     const state = this.input.getState()
     if (!this.input.getPointerLocked()) return
 
-    this.yaw += state.mouseDeltaX * this.cameraSensitivity
-    this.pitch += state.mouseDeltaY * this.cameraSensitivity
+    // Mouse right = look right, mouse up = look up
+    this.yaw -= state.mouseDeltaX * this.cameraSensitivity
+    this.pitch -= state.mouseDeltaY * this.cameraSensitivity
 
     // Clamp pitch
     this.pitch = Math.max(this.minPitch, Math.min(this.maxPitch, this.pitch))
