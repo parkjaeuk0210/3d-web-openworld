@@ -20,8 +20,9 @@ export class VehicleController {
   private maxPitch = 0.8
 
   // Auto-follow camera
-  private autoFollowSpeed = 0.03
+  private autoFollowSpeed = 0.08
   private isAutoFollow = true
+  private manualControlTimer: number | null = null
 
   constructor(vehicle: Vehicle, camera: THREE.PerspectiveCamera, input: InputManager) {
     this.vehicle = vehicle
@@ -73,18 +74,20 @@ export class VehicleController {
 
   private handleCameraRotation(): void {
     const state = this.input.getState()
-    if (!this.input.getPointerLocked()) return
 
-    // Manual camera control with mouse
+    // Manual camera control with mouse/touch
     if (Math.abs(state.mouseDeltaX) > 0 || Math.abs(state.mouseDeltaY) > 0) {
       this.yaw += state.mouseDeltaX * this.cameraSensitivity
       this.pitch += state.mouseDeltaY * this.cameraSensitivity
       this.isAutoFollow = false
 
-      // Reset auto-follow after a delay (handled by gradual return)
-      setTimeout(() => {
+      // Reset auto-follow after a delay
+      if (this.manualControlTimer) {
+        clearTimeout(this.manualControlTimer)
+      }
+      this.manualControlTimer = window.setTimeout(() => {
         this.isAutoFollow = true
-      }, 2000)
+      }, 1500)
     }
 
     // Clamp pitch
@@ -104,7 +107,11 @@ export class VehicleController {
       while (deltaYaw > Math.PI) deltaYaw -= Math.PI * 2
       while (deltaYaw < -Math.PI) deltaYaw += Math.PI * 2
 
-      this.yaw += deltaYaw * this.autoFollowSpeed
+      // Faster follow when moving
+      const speed = this.vehicle.getSpeed()
+      const followSpeed = speed > 10 ? this.autoFollowSpeed * 1.5 : this.autoFollowSpeed
+
+      this.yaw += deltaYaw * followSpeed
     }
   }
 
