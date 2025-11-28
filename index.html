@@ -105,23 +105,6 @@
       transition: width 0.3s;
     }
 
-    #stamina-bar {
-      width: 100%;
-      height: 10px;
-      background: rgba(0, 0, 0, 0.7);
-      border: 2px solid #ffaa00;
-      border-radius: 3px;
-      margin-top: 5px;
-      overflow: hidden;
-    }
-
-    #stamina-fill {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(to right, #ffaa00, #ffcc00);
-      transition: width 0.3s;
-    }
-
     #controls-hint {
       position: absolute;
       top: 30px;
@@ -144,22 +127,6 @@
       padding: 2px 6px;
       border-radius: 3px;
       border: 1px solid #555;
-    }
-
-    #vehicle-indicator {
-      position: absolute;
-      bottom: 200px;
-      left: 30px;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 10px 15px;
-      border-radius: 5px;
-      color: #fff;
-      font-size: 14px;
-      display: none;
-    }
-
-    #vehicle-indicator.active {
-      display: block;
     }
 
     #loading-screen {
@@ -236,12 +203,6 @@
         left: 10px;
         width: 150px;
       }
-
-      #vehicle-indicator {
-        bottom: 280px;
-        left: 50%;
-        transform: translateX(-50%);
-      }
     }
   </style>
 </head>
@@ -260,17 +221,12 @@
         <div id="health-bar">
           <div id="health-fill"></div>
         </div>
-        <div id="stamina-bar">
-          <div id="stamina-fill"></div>
-        </div>
       </div>
 
       <div id="controls-hint">
         <h3>Controls</h3>
-        <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> - Move<br>
-        <kbd>Shift</kbd> - Sprint/Drift<br>
-        <kbd>Space</kbd> - Jump<br>
-        <kbd>E</kbd> - Enter/Exit Vehicle<br>
+        <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> - Drive<br>
+        <kbd>Shift</kbd> - Handbrake<br>
         <kbd>L</kbd> - Toggle Lights<br>
         <kbd>R</kbd> - Flip Vehicle<br>
         <kbd>Mouse</kbd> - Look Around
@@ -285,9 +241,6 @@
         <span id="speed-unit">km/h</span>
       </div>
 
-      <div id="vehicle-indicator">
-        Press <kbd>E</kbd> to enter vehicle
-      </div>
     </div>
   </div>
 

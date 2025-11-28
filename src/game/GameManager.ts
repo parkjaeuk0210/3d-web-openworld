@@ -1,18 +1,11 @@
 import * as THREE from 'three'
 import { PhysicsWorld } from './physics/PhysicsWorld'
-import { Player } from './entities/Player'
 import { Vehicle } from './entities/Vehicle'
 import { City } from './entities/Building'
 import { DestructibleStructure } from './entities/DestructibleStructure'
 import { InputManager } from './controls/InputManager'
-import { PlayerController } from './controls/PlayerController'
 import { VehicleController } from './controls/VehicleController'
 import { GameUI } from './ui/GameUI'
-
-export enum GameMode {
-  OnFoot,
-  InVehicle
-}
 
 export class GameManager {
   // Three.js
@@ -24,21 +17,15 @@ export class GameManager {
   private physicsWorld: PhysicsWorld
 
   // Entities
-  private player: Player
-  private vehicles: Vehicle[] = []
+  private vehicle: Vehicle
   private city: City
   private destructibleStructure: DestructibleStructure
 
   // Controls
   private inputManager: InputManager
-  private playerController: PlayerController
-  private vehicleController: VehicleController | null = null
+  private vehicleController: VehicleController
 
   // State
-  private gameMode: GameMode = GameMode.OnFoot
-  private currentVehicle: Vehicle | null = null
-  private canInteract = true
-  private interactCooldown = 500 // ms
   private canToggleLights = true
 
   // UI
@@ -46,7 +33,6 @@ export class GameManager {
 
   // Timing
   private clock: THREE.Clock
-  private lastTime = 0
 
   constructor() {
     this.clock = new THREE.Clock()
@@ -69,17 +55,19 @@ export class GameManager {
     this.updateLoadingProgress(60, 'Creating destructible structures...')
     this.createDestructibleStructures()
 
-    this.updateLoadingProgress(70, 'Spawning vehicles...')
-    this.createVehicles()
-
-    this.updateLoadingProgress(80, 'Creating player...')
-    this.createPlayer()
+    this.updateLoadingProgress(70, 'Spawning vehicle...')
+    this.createVehicle()
 
     this.updateLoadingProgress(90, 'Setting up UI...')
     this.initUI()
 
-    // Start in vehicle
-    this.enterVehicle(this.vehicles[0])
+    // Setup vehicle controller
+    this.vehicleController = new VehicleController(
+      this.vehicle,
+      this.camera,
+      this.inputManager
+    )
+    this.vehicleController.alignToVehicle()
 
     this.updateLoadingProgress(100, 'Ready!')
 
@@ -188,38 +176,14 @@ export class GameManager {
     this.destructibleStructure.addToScene(this.scene)
   }
 
-  private createVehicles(): void {
-    // Create multiple vehicles around the city
-    const vehicleConfigs = [
-      { position: { x: 0, y: 2, z: 10 }, color: 0xff3333 },
-      { position: { x: -30, y: 2, z: 0 }, color: 0x3333ff },
-      { position: { x: 30, y: 2, z: 0 }, color: 0x33ff33 },
-      { position: { x: 0, y: 2, z: -30 }, color: 0xffff33 },
-      { position: { x: 50, y: 2, z: 50 }, color: 0xff33ff }
-    ]
+  private createVehicle(): void {
+    this.vehicle = new Vehicle(this.physicsWorld, {}, 0xff3333)
+    this.vehicle.physics.setPosition(0, 2, 10)
 
-    for (const config of vehicleConfigs) {
-      const vehicle = new Vehicle(this.physicsWorld, {}, config.color)
-      vehicle.physics.setPosition(config.position.x, config.position.y, config.position.z)
-
-      this.scene.add(vehicle.mesh)
-      for (const wheelMesh of vehicle.wheelMeshes) {
-        this.scene.add(wheelMesh)
-      }
-
-      this.vehicles.push(vehicle)
+    this.scene.add(this.vehicle.mesh)
+    for (const wheelMesh of this.vehicle.wheelMeshes) {
+      this.scene.add(wheelMesh)
     }
-  }
-
-  private createPlayer(): void {
-    this.player = new Player(this.physicsWorld)
-    this.scene.add(this.player.mesh)
-
-    this.playerController = new PlayerController(
-      this.player,
-      this.camera,
-      this.inputManager
-    )
   }
 
   private initUI(): void {
@@ -230,29 +194,17 @@ export class GameManager {
     requestAnimationFrame(() => this.animate())
 
     const deltaTime = this.clock.getDelta()
-    const time = this.clock.getElapsedTime()
 
     // Update physics
     this.physicsWorld.update(deltaTime)
 
     // Update entities
-    this.player.update()
-    for (const vehicle of this.vehicles) {
-      vehicle.update()
-    }
+    this.vehicle.update()
     this.destructibleStructure.update()
 
-    // Handle interactions
-    this.handleInteraction()
+    // Handle vehicle controls
     this.handleLightsToggle()
-
-    // Update controls based on game mode
-    if (this.gameMode === GameMode.OnFoot) {
-      this.playerController.update()
-      this.checkNearbyVehicles()
-    } else if (this.gameMode === GameMode.InVehicle && this.vehicleController) {
-      this.vehicleController.update()
-    }
+    this.vehicleController.update()
 
     // Update UI
     this.updateUI()
@@ -261,32 +213,12 @@ export class GameManager {
     this.renderer.render(this.scene, this.camera)
   }
 
-  private handleInteraction(): void {
-    if (!this.canInteract) return
-
-    const state = this.inputManager.getState()
-    if (state.interact) {
-      this.canInteract = false
-
-      if (this.gameMode === GameMode.OnFoot) {
-        this.tryEnterVehicle()
-      } else {
-        this.exitVehicle()
-      }
-
-      setTimeout(() => {
-        this.canInteract = true
-      }, this.interactCooldown)
-    }
-  }
-
   private handleLightsToggle(): void {
     if (!this.canToggleLights) return
-    if (this.gameMode !== GameMode.InVehicle || !this.currentVehicle) return
 
     // L key to toggle lights
     if (this.inputManager.isKeyPressed('KeyL')) {
-      this.currentVehicle.toggleLights()
+      this.vehicle.toggleLights()
       this.canToggleLights = false
 
       setTimeout(() => {
@@ -296,119 +228,28 @@ export class GameManager {
 
     // R key to flip/reset vehicle
     if (this.inputManager.isKeyPressed('KeyR')) {
-      this.currentVehicle.flipReset()
+      this.vehicle.flipReset()
       this.canToggleLights = false
 
       setTimeout(() => {
         this.canToggleLights = true
-      }, 1000) // Longer cooldown for reset
+      }, 1000)
     }
-  }
-
-  private checkNearbyVehicles(): void {
-    const playerPos = this.player.physics.getPosition()
-    let nearestVehicle: Vehicle | null = null
-    let nearestDistance = Infinity
-
-    for (const vehicle of this.vehicles) {
-      const vehiclePos = vehicle.getPosition()
-      const distance = playerPos.distanceTo(vehiclePos)
-
-      if (distance < nearestDistance) {
-        nearestDistance = distance
-        nearestVehicle = vehicle
-      }
-    }
-
-    // Show vehicle indicator if close enough
-    const indicator = document.getElementById('vehicle-indicator')
-    if (indicator) {
-      if (nearestDistance < 5 && nearestVehicle) {
-        indicator.classList.add('active')
-      } else {
-        indicator.classList.remove('active')
-      }
-    }
-  }
-
-  private tryEnterVehicle(): void {
-    const playerPos = this.player.physics.getPosition()
-
-    for (const vehicle of this.vehicles) {
-      const vehiclePos = vehicle.getPosition()
-      const distance = playerPos.distanceTo(vehiclePos)
-
-      if (distance < 5) {
-        this.enterVehicle(vehicle)
-        break
-      }
-    }
-  }
-
-  private enterVehicle(vehicle: Vehicle): void {
-    this.currentVehicle = vehicle
-    this.gameMode = GameMode.InVehicle
-    this.player.enterVehicle()
-
-    // Create vehicle controller
-    this.vehicleController = new VehicleController(
-      vehicle,
-      this.camera,
-      this.inputManager
-    )
-
-    // Align camera to vehicle direction immediately
-    this.vehicleController.alignToVehicle()
-
-    // Hide vehicle indicator
-    const indicator = document.getElementById('vehicle-indicator')
-    if (indicator) {
-      indicator.classList.remove('active')
-    }
-  }
-
-  private exitVehicle(): void {
-    if (!this.currentVehicle) return
-
-    // Check if vehicle is slow enough to exit
-    if (this.currentVehicle.getSpeed() > 20) {
-      return // Can't exit while moving fast
-    }
-
-    const exitPosition = this.currentVehicle.getExitPosition()
-    this.player.exitVehicle(exitPosition)
-
-    // Transfer camera orientation back to player
-    if (this.vehicleController) {
-      this.playerController.setYaw(this.vehicleController.getYaw() - Math.PI)
-    }
-
-    this.gameMode = GameMode.OnFoot
-    this.currentVehicle = null
-    this.vehicleController = null
   }
 
   private updateUI(): void {
     // Update speed
-    let speed = 0
-    if (this.gameMode === GameMode.InVehicle && this.currentVehicle) {
-      speed = Math.round(this.currentVehicle.getSpeed())
-    }
+    const speed = Math.round(this.vehicle.getSpeed())
     this.ui.updateSpeed(speed)
 
     // Update minimap
-    const position = this.gameMode === GameMode.InVehicle && this.currentVehicle
-      ? this.currentVehicle.getPosition()
-      : this.player.physics.getPosition()
-
-    const rotation = this.gameMode === GameMode.InVehicle && this.currentVehicle
-      ? new THREE.Euler().setFromQuaternion(this.currentVehicle.mesh.quaternion).y
-      : this.player.mesh.rotation.y
+    const position = this.vehicle.getPosition()
+    const rotation = new THREE.Euler().setFromQuaternion(this.vehicle.mesh.quaternion).y
 
     this.ui.updateMinimap(
       position,
       rotation,
-      this.vehicles.map(v => v.getPosition()),
+      [this.vehicle.getPosition()],
       this.city.buildings.map(b => ({
         position: new THREE.Vector3(b.body.position.x, 0, b.body.position.z),
         size: new THREE.Vector2(
