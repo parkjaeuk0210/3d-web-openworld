@@ -15,7 +15,7 @@ export class Vehicle {
   private headlightRight: THREE.SpotLight
   private taillightLeft: THREE.PointLight
   private taillightRight: THREE.PointLight
-  public lightsOn = true
+  public lightsOn = false  // Default OFF for battery saving
 
   // Reusable objects for update (avoid GC)
   private tempWheelPos = new THREE.Vector3()
@@ -159,6 +159,9 @@ export class Vehicle {
     this.taillightRight = new THREE.PointLight(0xff0000, 1, 8, 2)
     this.taillightRight.position.set(0.5, 0.1, rearZ - 0.1)
     this.mesh.add(this.taillightRight)
+
+    // Start with lights OFF
+    this.setLights(false)
   }
 
   private createWheels(): void {
@@ -278,5 +281,18 @@ export class Vehicle {
     this.headlightRight.visible = on
     this.taillightLeft.visible = on
     this.taillightRight.visible = on
+  }
+
+  flipReset(): void {
+    // Get current position and reset slightly above
+    const pos = this.physics.getPosition()
+    this.physics.chassisBody.position.set(pos.x, pos.y + 2, pos.z)
+
+    // Reset rotation to upright
+    this.physics.chassisBody.quaternion.setFromEuler(0, 0, 0)
+
+    // Stop all movement
+    this.physics.chassisBody.velocity.setZero()
+    this.physics.chassisBody.angularVelocity.setZero()
   }
 }

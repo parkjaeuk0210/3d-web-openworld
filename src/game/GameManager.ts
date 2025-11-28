@@ -39,6 +39,7 @@ export class GameManager {
   private currentVehicle: Vehicle | null = null
   private canInteract = true
   private interactCooldown = 500 // ms
+  private canToggleLights = true
 
   // UI
   private ui: GameUI
@@ -243,6 +244,7 @@ export class GameManager {
 
     // Handle interactions
     this.handleInteraction()
+    this.handleLightsToggle()
 
     // Update controls based on game mode
     if (this.gameMode === GameMode.OnFoot) {
@@ -275,6 +277,31 @@ export class GameManager {
       setTimeout(() => {
         this.canInteract = true
       }, this.interactCooldown)
+    }
+  }
+
+  private handleLightsToggle(): void {
+    if (!this.canToggleLights) return
+    if (this.gameMode !== GameMode.InVehicle || !this.currentVehicle) return
+
+    // L key to toggle lights
+    if (this.inputManager.isKeyPressed('KeyL')) {
+      this.currentVehicle.toggleLights()
+      this.canToggleLights = false
+
+      setTimeout(() => {
+        this.canToggleLights = true
+      }, 300)
+    }
+
+    // R key to flip/reset vehicle
+    if (this.inputManager.isKeyPressed('KeyR')) {
+      this.currentVehicle.flipReset()
+      this.canToggleLights = false
+
+      setTimeout(() => {
+        this.canToggleLights = true
+      }, 1000) // Longer cooldown for reset
     }
   }
 
