@@ -75,9 +75,9 @@ export class VehicleController {
       this.vehicle.physics.resetSteering()
     }
 
-    // Handbrake (sprint key)
-    if (state.sprint) {
-      this.vehicle.physics.brake(200)
+    // Handbrake (Space key)
+    if (state.handbrake) {
+      this.vehicle.physics.brake(300)
     }
   }
 

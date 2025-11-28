@@ -18,9 +18,7 @@ export class TouchControls {
     backward: false,
     left: false,
     right: false,
-    sprint: false,
-    jump: false,
-    interact: false,
+    handbrake: false,
     mouseX: 0,
     mouseY: 0,
     mouseDeltaX: 0,
@@ -108,8 +106,7 @@ export class TouchControls {
     this.container.appendChild(this.buttonsArea)
 
     // Create buttons (minimal - joystick handles movement)
-    this.createButton('interact-btn', 'E', '탑승/하차', () => this.state.interact = true, () => this.state.interact = false)
-    this.createButton('sprint-btn', '⇧', '드리프트', () => this.state.sprint = true, () => this.state.sprint = false)
+    this.createButton('handbrake-btn', '◼', '핸드브레이크', () => this.state.handbrake = true, () => this.state.handbrake = false)
 
     // Camera touch area (center-right)
     const cameraArea = document.createElement('div')

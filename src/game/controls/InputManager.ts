@@ -5,9 +5,7 @@ export interface InputState {
   backward: boolean
   left: boolean
   right: boolean
-  sprint: boolean
-  jump: boolean
-  interact: boolean
+  handbrake: boolean
   mouseX: number
   mouseY: number
   mouseDeltaX: number
@@ -26,9 +24,7 @@ export class InputManager {
     backward: false,
     left: false,
     right: false,
-    sprint: false,
-    jump: false,
-    interact: false,
+    handbrake: false,
     mouseX: 0,
     mouseY: 0,
     mouseDeltaX: 0,
@@ -64,7 +60,7 @@ export class InputManager {
     this.updateState()
 
     // Prevent default for game keys
-    if (['Space', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyE', 'ShiftLeft'].includes(event.code)) {
+    if (['Space', 'KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(event.code)) {
       event.preventDefault()
     }
   }
@@ -108,9 +104,7 @@ export class InputManager {
     this.state.backward = this.keys.has('KeyS') || this.keys.has('ArrowDown')
     this.state.left = this.keys.has('KeyA') || this.keys.has('ArrowLeft')
     this.state.right = this.keys.has('KeyD') || this.keys.has('ArrowRight')
-    this.state.sprint = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')
-    this.state.jump = this.keys.has('Space')
-    this.state.interact = this.keys.has('KeyE')
+    this.state.handbrake = this.keys.has('Space')
   }
 
   // Combined state getter - merges keyboard and touch input
