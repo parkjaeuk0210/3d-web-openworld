@@ -52,6 +52,10 @@ export class VehiclePhysics {
   private steeringValue = 0
   private steeringIncrement = 0.04
 
+  // Stability tracking
+  private isStable = false
+  private stabilityCheckFrames = 0
+
   // Wheel indices
   private readonly FRONT_LEFT = 0
   private readonly FRONT_RIGHT = 1
@@ -193,6 +197,30 @@ export class VehiclePhysics {
   }
 
   update(): void {
+    // Wait for physics to stabilize before accepting engine forces
+    if (!this.isStable) {
+      this.stabilityCheckFrames++
+      // Check if all wheels are touching ground
+      let wheelsOnGround = 0
+      for (let i = 0; i < this.vehicle.wheelInfos.length; i++) {
+        if (this.vehicle.wheelInfos[i].isInContact) {
+          wheelsOnGround++
+        }
+      }
+      // Consider stable after a few frames with wheels on ground
+      if (wheelsOnGround >= 3 && this.stabilityCheckFrames > 30) {
+        this.isStable = true
+      }
+      // During instability, only update wheel positions
+      for (let i = 0; i < this.vehicle.wheelInfos.length; i++) {
+        this.vehicle.updateWheelTransform(i)
+        const transform = this.vehicle.wheelInfos[i].worldTransform
+        this.wheelBodies[i].position.copy(transform.position)
+        this.wheelBodies[i].quaternion.copy(transform.quaternion)
+      }
+      return
+    }
+
     // Apply steering to front wheels
     this.vehicle.setSteeringValue(this.steeringValue, this.FRONT_LEFT)
     this.vehicle.setSteeringValue(this.steeringValue, this.FRONT_RIGHT)
@@ -214,6 +242,10 @@ export class VehiclePhysics {
       this.wheelBodies[i].position.copy(transform.position)
       this.wheelBodies[i].quaternion.copy(transform.quaternion)
     }
+  }
+
+  isVehicleStable(): boolean {
+    return this.isStable
   }
 
   getSpeed(): number {
@@ -277,5 +309,8 @@ export class VehiclePhysics {
     this.steeringValue = 0
     this.engineForce = 0
     this.brakingForce = 0
+    // Reset stability - will need to re-stabilize
+    this.isStable = false
+    this.stabilityCheckFrames = 0
   }
 }
