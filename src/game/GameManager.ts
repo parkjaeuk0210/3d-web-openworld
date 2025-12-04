@@ -118,14 +118,14 @@ export class GameManager {
   private initScene(): void {
     this.scene = new THREE.Scene()
     this.scene.background = new THREE.Color(0x87ceeb) // Sky blue
-    this.scene.fog = new THREE.Fog(0x87ceeb, 100, 500)
+    this.scene.fog = new THREE.Fog(0x87ceeb, 150, 800) // Extended fog for larger map
 
     // Camera
     this.camera = new THREE.PerspectiveCamera(
       60,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      1500 // Extended far plane for larger map
     )
     this.camera.position.set(0, 10, 20)
 
@@ -142,14 +142,14 @@ export class GameManager {
     const sunLight = new THREE.DirectionalLight(0xffffff, 1)
     sunLight.position.set(50, 100, 50)
     sunLight.castShadow = true
-    sunLight.shadow.mapSize.width = 4096
-    sunLight.shadow.mapSize.height = 4096
+    sunLight.shadow.mapSize.width = 2048
+    sunLight.shadow.mapSize.height = 2048
     sunLight.shadow.camera.near = 0.5
-    sunLight.shadow.camera.far = 500
-    sunLight.shadow.camera.left = -150
-    sunLight.shadow.camera.right = 150
-    sunLight.shadow.camera.top = 150
-    sunLight.shadow.camera.bottom = -150
+    sunLight.shadow.camera.far = 800
+    sunLight.shadow.camera.left = -250
+    sunLight.shadow.camera.right = 250
+    sunLight.shadow.camera.top = 250
+    sunLight.shadow.camera.bottom = -250
     sunLight.shadow.bias = -0.0001
     this.scene.add(sunLight)
 

@@ -18,6 +18,7 @@ export interface VehicleConfig {
   maxEngineForce: number
   maxBrakingForce: number
   maxSteeringAngle: number
+  maxSpeed: number
 }
 
 export const DEFAULT_VEHICLE_CONFIG: VehicleConfig = {
@@ -35,7 +36,8 @@ export const DEFAULT_VEHICLE_CONFIG: VehicleConfig = {
   rollInfluence: 0.1,
   maxEngineForce: 1500,
   maxBrakingForce: 500,
-  maxSteeringAngle: 0.5
+  maxSteeringAngle: 0.5,
+  maxSpeed: 150
 }
 
 export class VehiclePhysics {
@@ -225,9 +227,18 @@ export class VehiclePhysics {
     this.vehicle.setSteeringValue(this.steeringValue, this.FRONT_LEFT)
     this.vehicle.setSteeringValue(this.steeringValue, this.FRONT_RIGHT)
 
-    // Apply engine force to rear wheels (rear-wheel drive)
-    this.vehicle.applyEngineForce(this.engineForce, this.BACK_LEFT)
-    this.vehicle.applyEngineForce(this.engineForce, this.BACK_RIGHT)
+    // Apply engine force to rear wheels (rear-wheel drive) with speed limit
+    let appliedForce = this.engineForce
+    const currentSpeed = this.getSpeed()
+    if (currentSpeed > this.config.maxSpeed) {
+      appliedForce = 0
+    } else if (currentSpeed > this.config.maxSpeed * 0.9) {
+      // Gradually reduce force as approaching max speed
+      const ratio = (this.config.maxSpeed - currentSpeed) / (this.config.maxSpeed * 0.1)
+      appliedForce = this.engineForce * ratio
+    }
+    this.vehicle.applyEngineForce(appliedForce, this.BACK_LEFT)
+    this.vehicle.applyEngineForce(appliedForce, this.BACK_RIGHT)
 
     // Apply braking force
     this.vehicle.setBrake(this.brakingForce, this.FRONT_LEFT)

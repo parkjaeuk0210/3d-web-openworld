@@ -87,8 +87,8 @@ export class VehicleController {
 
     // Manual camera control with mouse/touch
     if (Math.abs(state.mouseDeltaX) > 0 || Math.abs(state.mouseDeltaY) > 0) {
-      this.yaw -= state.mouseDeltaX * this.cameraSensitivity
-      this.pitch += state.mouseDeltaY * this.cameraSensitivity
+      this.yaw += state.mouseDeltaX * this.cameraSensitivity
+      this.pitch -= state.mouseDeltaY * this.cameraSensitivity
       this.manualControlActive = true
 
       // Reset manual control flag after delay (longer = more manual control time)
