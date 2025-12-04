@@ -167,13 +167,14 @@ export class City {
 
   constructor(physicsWorld: PhysicsWorld) {
     this.physicsWorld = physicsWorld
-    this.initBuildingConfigs()
     this.createGround()
     this.createBoundaries()
-    this.createRoads()
-    this.createBuildings()
-    this.createWindowInstances()
-    this.createProps()
+    // 맵 비움 - 잔디만 유지
+    // this.initBuildingConfigs()
+    // this.createRoads()
+    // this.createBuildings()
+    // this.createWindowInstances()
+    // this.createProps()
   }
 
   private initBuildingConfigs(): void {
@@ -441,7 +442,10 @@ export class City {
 
   addToScene(scene: THREE.Scene): void {
     scene.add(this.ground)
-    scene.add(this.roads)
+
+    if (this.roads) {
+      scene.add(this.roads)
+    }
 
     for (const building of this.buildings) {
       scene.add(building.mesh)
