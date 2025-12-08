@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "three": "^0.160.0",
-    "cannon-es": "^0.20.0"
+    "cannon-es": "^0.20.0",
+    "socket.io-client": "^4.7.0"
   },
   "devDependencies": {
     "@types/three": "^0.160.0",

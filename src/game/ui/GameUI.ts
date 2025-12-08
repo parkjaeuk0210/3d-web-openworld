@@ -235,4 +235,40 @@ export class GameUI {
       style.remove()
     }, duration)
   }
+
+  updateOnlineStatus(isOnline: boolean, playerCount: number): void {
+    let statusEl = document.getElementById('online-status')
+
+    if (!statusEl) {
+      statusEl = document.createElement('div')
+      statusEl.id = 'online-status'
+      statusEl.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        color: #00ff88;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: bold;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      `
+      document.body.appendChild(statusEl)
+    }
+
+    if (isOnline) {
+      statusEl.innerHTML = `
+        <span style="width: 8px; height: 8px; background: #00ff88; border-radius: 50%; animation: pulse 1.5s infinite;"></span>
+        Online: ${playerCount} player${playerCount > 1 ? 's' : ''}
+      `
+      statusEl.style.display = 'flex'
+    } else {
+      statusEl.style.display = 'none'
+    }
+  }
 }
